@@ -1,6 +1,7 @@
 name: RDP
 
-on: [workflow_dispatch]
+on: 
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,7 +19,7 @@ jobs:
         run: |
           net user myuser MyPassword123! /add
           net localgroup administrators myuser /add
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
       - name: Start ngrok tunnel
@@ -33,11 +34,13 @@ jobs:
         run: |
           $json = Get-Content ngrok_info.json | ConvertFrom-Json
           $addr = $json.tunnels[0].public_url -replace "tcp://",""
-          $content = @"RDP Connection Information
+          $content = @"
+RDP Connection Information
 ==========================
 Host:Port = $addr
 Username  = myuser
-Password  = MyPassword123!"@
+Password  = MyPassword123!
+"@
           $content | Out-File -FilePath rdp.txt -Encoding utf8
           Write-Host $content
 
