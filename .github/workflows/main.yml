@@ -33,13 +33,11 @@ jobs:
         run: |
           $json = Get-Content ngrok_info.json | ConvertFrom-Json
           $addr = $json.tunnels[0].public_url -replace "tcp://",""
-          $content = @"
-RDP Connection Information
+          $content = @"RDP Connection Information
 ==========================
 Host:Port = $addr
 Username  = myuser
-Password  = MyPassword123!
-"@
+Password  = MyPassword123!"@
           $content | Out-File -FilePath rdp.txt -Encoding utf8
           Write-Host $content
 
