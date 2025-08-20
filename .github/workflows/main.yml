@@ -1,6 +1,6 @@
 name: RDP
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -15,34 +15,27 @@ jobs:
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
-      - name: Enable RDP user
+      - name: Enable RDP
         run: |
           net user myuser MyPassword123! /add
           net localgroup administrators myuser /add
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: Start ngrok tunnel
+      - name: Start ngrok
         run: |
-          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp", "3389"
-          Write-Host "⏳ Waiting for ngrok to start..."
-          Start-Sleep -Seconds 25
-          Invoke-WebRequest -Uri "http://127.0.0.1:4040/api/tunnels" -OutFile "ngrok_info.json"
-          Get-Content ngrok_info.json
+          .\ngrok.exe tcp 3389 --log=stdout > log.txt &
+          Start-Sleep -Seconds 20
+          Invoke-WebRequest -Uri "http://127.0.0.1:4040/api/tunnels" -OutFile "ngrok.json"
+          Get-Content ngrok.json
 
-      - name: Save connection info
+      - name: Save RDP info
         run: |
-          $json = Get-Content ngrok_info.json | ConvertFrom-Json
+          $json = Get-Content ngrok.json | ConvertFrom-Json
           $addr = $json.tunnels[0].public_url -replace "tcp://",""
-          $content = @"
-RDP Connection Information"
-==========================
-Host:Port = $addr
-Username  = myuser
-Password  = MyPassword123!
-"@
-          $content | Out-File -FilePath rdp.txt -Encoding utf8
-          Write-Host $content
+          $info = "Host:Port = $addr`nUsername = myuser`nPassword = MyPassword123!"
+          $info | Out-File rdp.txt
+          Write-Host $info
 
       - name: Upload RDP info
         uses: actions/upload-artifact@v4
