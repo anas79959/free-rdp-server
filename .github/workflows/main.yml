@@ -1,49 +1,21 @@
-name: RDP Access
+name: RDP
 
 on: [workflow_dispatch]
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Download and Set up Ngrok
-      run: |
-        Invoke-WebRequest -Uri https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
-        Expand-Archive -Path ngrok.zip -DestinationPath .
-        .\ngrok.exe config add-authtoken $env:NGROK_AUTH_TOKEN
-      env:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      - name: Download ngrok
+        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip
+          ./ngrok.exe authtoken YOUR_AUTH_TOKEN
 
-    - name: Enable RDP and Create User
-      run: |
-        net user kamel123 MyStrong123 /add
-        net localgroup administrators kamel123 /add
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-
-    - name: Start Ngrok Tunnel
-      run: |
-        Start-Process -NoNewWindow -FilePath .\ngrok.exe -ArgumentList "tcp 3389"
-        Start-Sleep -Seconds 15
-
-    - name: Display RDP Info
-      run: |
-        $maxAttempts = 10
-        $attempt = 0
-        do {
-          try {
-            $response = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
-            $rdpAddress = $response.tunnels[0].public_url -replace "tcp://", ""
-            Write-Output "==============================="
-            Write-Output "✅ Connect to your RDP:"
-            Write-Output "Address: $rdpAddress"
-            Write-Output "Username: kamel123"
-            Write-Output "Password: MyStrong123"
-            Write-Output "==============================="
-            break
-          } catch {
-            Start-Sleep -Seconds 5
-            $attempt++
-          }
-        } while ($attempt -lt $maxAttempts)
+      - name: Enable RDP
+        run: |
+          net user kamel123 MyStrong123 /add
+          net localgroup administrators kamel123 /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          ./ngrok.exe tcp 3389
