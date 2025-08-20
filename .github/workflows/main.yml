@@ -35,7 +35,7 @@ jobs:
           $json = Get-Content ngrok_info.json | ConvertFrom-Json
           $addr = $json.tunnels[0].public_url -replace "tcp://",""
           $content = @"
-RDP Connection Information
+RDP Connection Information"
 ==========================
 Host:Port = $addr
 Username  = myuser
