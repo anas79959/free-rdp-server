@@ -11,7 +11,7 @@ jobs:
       run: |
         Invoke-WebRequest -Uri https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
         Expand-Archive -Path ngrok.zip -DestinationPath .
-        .\ngrok.exe config add-authtoken YOUR_AUTH_TOKEN
+        .\ngrok.exe config add-authtoken 2vxYrndTrUXzGgqHUbVrn5LjaLO_souXeL5wjHuHsCR9YYW
 
     - name: Enable RDP and Create User
       run: |
