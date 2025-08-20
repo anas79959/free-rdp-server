@@ -26,21 +26,23 @@ jobs:
           Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp", "3389"
           Start-Sleep -Seconds 15
           curl http://127.0.0.1:4040/api/tunnels | Out-File ngrok_info.json
-          Get-Content ngrok_info.json
 
-      - name: Show connection info
+      - name: Save connection info
         run: |
           $json = Get-Content ngrok_info.json | ConvertFrom-Json
           $addr = $json.tunnels[0].public_url -replace "tcp://",""
-          echo "==========================="
-          echo "🖥️  Use this info in RDP:"
-          echo "IP:PORT = $addr"
-          echo "Username = myuser"
-          echo "Password = MyPassword123!"
-          echo "==========================="
+          $content = @"
+RDP Connection Information
+==========================
+IP:PORT = $addr
+Username = myuser
+Password = MyPassword123!
+"@
+          $content | Out-File -FilePath rdp.txt -Encoding utf8
+          Get-Content rdp.txt
 
-      - name: Upload ngrok info
+      - name: Upload RDP info
         uses: actions/upload-artifact@v4
         with:
-          name: RDP-connection
-          path: ngrok_info.json
+          name: RDP-Login
+          path: rdp.txt
