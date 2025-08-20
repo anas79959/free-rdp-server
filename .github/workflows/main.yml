@@ -7,11 +7,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Set up Ngrok
+    - name: Download and Set up Ngrok
       run: |
         Invoke-WebRequest -Uri https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
         Expand-Archive -Path ngrok.zip -DestinationPath .
-        .\ngrok.exe config add-authtoken 2vxYrndTrUXzGgqHUbVrn5LjaLO_souXeL5wjHuHsCR9YYW
+        .\ngrok.exe config add-authtoken $env:NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
     - name: Enable RDP and Create User
       run: |
@@ -21,14 +23,27 @@ jobs:
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
     - name: Start Ngrok Tunnel
-      run: Start-Process -NoNewWindow -FilePath .\ngrok.exe -ArgumentList "tcp 3389"
+      run: |
+        Start-Process -NoNewWindow -FilePath .\ngrok.exe -ArgumentList "tcp 3389"
+        Start-Sleep -Seconds 15
 
     - name: Display RDP Info
       run: |
-        Start-Sleep -Seconds 10
-        $response = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
-        $rdpAddress = $response.tunnels[0].public_url -replace "tcp://", ""
-        Write-Output "==============================="
-        Write-Output "Connect using this RDP address:"
-        Write-Output "$rdpAddress"
-        Write-Output "==============================="
+        $maxAttempts = 10
+        $attempt = 0
+        do {
+          try {
+            $response = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
+            $rdpAddress = $response.tunnels[0].public_url -replace "tcp://", ""
+            Write-Output "==============================="
+            Write-Output "✅ Connect to your RDP:"
+            Write-Output "Address: $rdpAddress"
+            Write-Output "Username: kamel123"
+            Write-Output "Password: MyStrong123"
+            Write-Output "==============================="
+            break
+          } catch {
+            Start-Sleep -Seconds 5
+            $attempt++
+          }
+        } while ($attempt -lt $maxAttempts)
